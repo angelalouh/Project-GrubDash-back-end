@@ -16,14 +16,15 @@ function bodyHasDeliverToProperty(req, res, next) {
       message: "Order must include a deliverTo property.",
     });
   }
-
+  // Passing the reqest body data to the next middleware/handler functions using "response.locals"
+  res.locals.reqBody = data;
   return next();
 }
 
 function bodyHasMobileNumProperty(req, res, next) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
-  if (!data.mobileNumber || !data.mobileNumber.length) {
+  if (!reqBody.mobileNumber || !reqBody.mobileNumber.length) {
     next({
       status: 400,
       message: "Order must include a mobileNumber property.",
@@ -34,9 +35,9 @@ function bodyHasMobileNumProperty(req, res, next) {
 }
 
 function bodyHasDishesProperty(req, res, next) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
-  if (!data.dishes || !data.dishes.length || !Array.isArray(data.dishes)) {
+  if (!reqBody.dishes || !reqBody.dishes.length || !Array.isArray(reqBody.dishes)) {
     next({
       status: 400,
       message: "Order must include at least one dish.",
@@ -47,7 +48,7 @@ function bodyHasDishesProperty(req, res, next) {
 }
 
 function bodyHasDishQuantityProperty(req, res, next) {
-  const { data: { dishes } = [] } = req.body;
+  const dishes = res.locals.reqBody.dishes;
 
   const indexesOfDishesWithoutQuantityProperty = dishes.reduce(
     (acc, dish, index) => {
@@ -92,6 +93,8 @@ function orderExists(req, res, next) {
 
   if (foundOrder) {
     res.locals.order = foundOrder;
+    // Passing the req route parameter, :orderId, to the next middleware/handler functions using "response.locals"
+    res.locals.orderId = orderId;
     return next();
   }
 
@@ -103,17 +106,17 @@ function orderExists(req, res, next) {
 
 // Validation Functions for PUT request/Update function:
 function bodyIdMatchesRouteId(req, res, next) {
-  const { orderId } = req.params;
-  const { data = {} } = req.body;
+  const orderId = res.locals.orderId;
+  const reqBody = res.locals.reqBody;
 
   // The id property is not required in the body of the request, but if it is present it must match :orderId from the route
-  if (data.id) {
-    if (data.id === orderId) {
+  if (reqBody.id) {
+    if (reqBody.id === orderId) {
       return next();
     }
     next({
       status: 400,
-      message: `Order id does not match route id. Order: ${data.id}, Route: ${orderId}`,
+      message: `Order id does not match route id. Order: ${reqBody.id}, Route: ${orderId}`,
     });
   }
 
@@ -121,9 +124,9 @@ function bodyIdMatchesRouteId(req, res, next) {
 }
 
 function bodyHasStatusProperty(req, res, next) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
-  if (!data.status || !data.status.length || data.status === "invalid") {
+  if (!reqBody.status || !reqBody.status.length || reqBody.status === "invalid") {
     next({
       status: 400,
       message:
@@ -131,7 +134,7 @@ function bodyHasStatusProperty(req, res, next) {
     });
   }
 
-  if (data.status === "delivered") {
+  if (reqBody.status === "delivered") {
     next({
       status: 400,
       message: "A delivered order cannot be changed.",
@@ -157,14 +160,14 @@ function orderStatusIsPending(req, res, next) {
 
 // Route Handlers:
 function destroy(req, res) {
-  const { orderId } = req.params;
+  const orderId = res.locals.orderId;
   const orderIndex = orders.findIndex((order) => order.id === orderId);
   orders.splice(orderIndex, 1);
   res.sendStatus(204);
 }
 
 function update(req, res) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
   const order = res.locals.order;
 
   // Creating array of property names
@@ -174,8 +177,8 @@ function update(req, res) {
     // Accessing each order object key within the array
     let propName = existingOrderProperties[i];
     // Updating each value if there is a difference between the existing order and the req body order
-    if (propName !== "id" && order[propName] !== data[propName]) {
-      order[propName] = data[propName];
+    if (propName !== "id" && order[propName] !== reqBody[propName]) {
+      order[propName] = reqBody[propName];
     }
   }
   res.json({ data: order });
@@ -186,9 +189,9 @@ function read(req, res) {
 }
 
 function create(req, res) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
   const newOrder = {
-    ...data,
+    ...reqBody,
     id: nextId(),
   };
   orders.push(newOrder);
@@ -210,12 +213,12 @@ module.exports = {
   read: [orderExists, read],
   update: [
     orderExists,
-    bodyIdMatchesRouteId,
-    bodyHasStatusProperty,
     bodyHasDeliverToProperty,
     bodyHasMobileNumProperty,
     bodyHasDishesProperty,
     bodyHasDishQuantityProperty,
+    bodyIdMatchesRouteId,
+    bodyHasStatusProperty,
     update,
   ],
   delete: [orderExists, orderStatusIsPending, destroy],

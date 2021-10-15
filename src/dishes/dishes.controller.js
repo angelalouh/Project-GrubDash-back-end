@@ -16,14 +16,15 @@ function bodyHasNameProperty(req, res, next) {
       message: "Dish must include a name.",
     });
   }
-
+  // Passing the reqest body data to the next middleware/handler functions using "response.locals"
+  res.locals.reqBody = data;
   return next();
 }
 
 function bodyHasDescriptionProperty(req, res, next) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
-  if (!data.description || !data.description.length) {
+  if (!reqBody.description || !reqBody.description.length) {
     next({
       status: 400,
       message: "Dish must include a description.",
@@ -34,9 +35,9 @@ function bodyHasDescriptionProperty(req, res, next) {
 }
 
 function bodyHasPriceProperty(req, res, next) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
-  if (!data.price || data.price < 0 || typeof data.price !== "number") {
+  if (!reqBody.price || reqBody.price < 0 || typeof reqBody.price !== "number") {
     next({
       status: 400,
       message:
@@ -48,9 +49,9 @@ function bodyHasPriceProperty(req, res, next) {
 }
 
 function bodyHasImageUrlProperty(req, res, next) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
-  if (!data["image_url"] || !data["image_url"].length) {
+  if (!reqBody["image_url"] || !reqBody["image_url"].length) {
     next({
       status: 400,
       message: "Dish must include a image_url",
@@ -67,6 +68,7 @@ function dishExists(req, res, next) {
 
   if (foundDish) {
     res.locals.dish = foundDish;
+    res.locals.dishId = dishId;
     return next();
   }
 
@@ -78,17 +80,17 @@ function dishExists(req, res, next) {
 
 // Validation Function for the Update function:
 function bodyIdMatchesRouteId(req, res, next) {
-  const { dishId } = req.params;
-  const { data = {} } = req.body;
+  const dishId = res.locals.dishId;
+  const reqBody = res.locals.reqBody;
 
-  if (data.id) {
-    if (data.id === dishId) {
+  if (reqBody.id) {
+    if (reqBody.id === dishId) {
       return next();
     }
 
     next({
       status: 400,
-      message: `Dish id does not match route id. Dish: ${data.id}, Route: ${dishId}`,
+      message: `Dish id does not match route id. Dish: ${reqBody.id}, Route: ${dishId}`,
     });
   }
 
@@ -98,7 +100,7 @@ function bodyIdMatchesRouteId(req, res, next) {
 // Route Handlers:
 function update(req, res) {
   const dish = res.locals.dish;
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
 
   // Creating array of property names
   const existingDishProperties = Object.getOwnPropertyNames(dish);
@@ -107,17 +109,17 @@ function update(req, res) {
     // Accessing each dish object key within the array
     let propName = existingDishProperties[i];
     // Updating each value if there is a difference between the existing dish and the req body dish
-    if (dish[propName] !== data[propName]) {
-      dish[propName] = data[propName];
+    if (dish[propName] !== reqBody[propName]) {
+      dish[propName] = reqBody[propName];
     }
   }
   res.json({ data: dish });
 }
 
 function create(req, res) {
-  const { data = {} } = req.body;
+  const reqBody = res.locals.reqBody;
   const newDish = {
-    ...data,
+    ...reqBody,
     id: nextId(),
   };
   dishes.push(newDish);
@@ -143,11 +145,11 @@ module.exports = {
   read: [dishExists, read],
   update: [
     dishExists,
-    bodyIdMatchesRouteId,
     bodyHasNameProperty,
     bodyHasDescriptionProperty,
     bodyHasPriceProperty,
     bodyHasImageUrlProperty,
+    bodyIdMatchesRouteId,
     update,
   ],
   list,
