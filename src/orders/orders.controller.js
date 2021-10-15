@@ -171,9 +171,9 @@ function update(req, res) {
   const existingOrderProperties = Object.getOwnPropertyNames(order);
 
   for (let i = 0; i < existingOrderProperties.length; i++) {
+    // Accessing each order object key within the array
     let propName = existingOrderProperties[i];
-
-    // If values of same property are not equal, existingDishProperty will
+    // Updating each value if there is a difference between the existing order and the req body order
     if (propName !== "id" && order[propName] !== data[propName]) {
       order[propName] = data[propName];
     }
