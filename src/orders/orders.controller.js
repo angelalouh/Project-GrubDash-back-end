@@ -1,42 +1,48 @@
 const path = require("path");
 
-// Use the existing order data
+// Using the existing order data
 const orders = require(path.resolve("src/data/orders-data"));
 
-// Use this function to assigh ID's when necessary
+// Using this function to assigh ID's when necessary
 const nextId = require("../utils/nextId");
 
-// Validation Functions for POST request:
+// Validation Functions for POST and PUT requests:
 function bodyHasDeliverToProperty(req, res, next) {
   const { data = {} } = req.body;
+
   if (!data.deliverTo || !data.deliverTo.length) {
     next({
       status: 400,
       message: "Order must include a deliverTo property.",
     });
   }
+
   return next();
 }
 
 function bodyHasMobileNumProperty(req, res, next) {
   const { data = {} } = req.body;
+
   if (!data.mobileNumber || !data.mobileNumber.length) {
     next({
       status: 400,
       message: "Order must include a mobileNumber property.",
     });
   }
+
   return next();
 }
 
 function bodyHasDishesProperty(req, res, next) {
   const { data = {} } = req.body;
+
   if (!data.dishes || !data.dishes.length || !Array.isArray(data.dishes)) {
     next({
       status: 400,
       message: "Order must include at least one dish.",
     });
   }
+
   return next();
 }
 
@@ -59,42 +65,48 @@ function bodyHasDishQuantityProperty(req, res, next) {
   );
 
   if (!indexesOfDishesWithoutQuantityProperty.length) {
-    // All dishes have the property quantity property
+    // All dishes have the right quantity property
     return next();
   }
 
   // If there are dishes without the right quantity property, the following code will run:
   if (indexesOfDishesWithoutQuantityProperty.length > 1) {
     const stringOfDishIndex = indexesOfDishesWithoutQuantityProperty.join(", ");
+
     next({
       status: 400,
       message: `Dishes ${stringOfDishIndex} must have a quantity that is an integer greater than 0.`,
     });
   }
+
   next({
     status: 400,
     message: `Dish ${indexesOfDishesWithoutQuantityProperty} must have a quantity that is an integer greater than 0.`,
   });
 }
 
-// Validation Function for Read function:
+// Validation Function for Read, Update, and Delete functions:
 function orderExists(req, res, next) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
+
   if (foundOrder) {
     res.locals.order = foundOrder;
     return next();
   }
+
   next({
     status: 404,
     message: `No matching order is found for orderId ${orderId}.`,
   });
 }
 
-// Validation Function for PUT request/Update function:
+// Validation Functions for PUT request/Update function:
 function bodyIdMatchesRouteId(req, res, next) {
   const { orderId } = req.params;
   const { data = {} } = req.body;
+
+  // The id property is not required in the body of the request, but if it is present it must match :orderId from the route
   if (data.id) {
     if (data.id === orderId) {
       return next();
@@ -104,11 +116,13 @@ function bodyIdMatchesRouteId(req, res, next) {
       message: `Order id does not match route id. Order: ${data.id}, Route: ${orderId}`,
     });
   }
+
   return next();
 }
 
 function bodyHasStatusProperty(req, res, next) {
   const { data = {} } = req.body;
+
   if (!data.status || !data.status.length || data.status === "invalid") {
     next({
       status: 400,
@@ -116,27 +130,32 @@ function bodyHasStatusProperty(req, res, next) {
         "Order must have a status of pending, preparing, out-for-delivery, or delivered.",
     });
   }
+
   if (data.status === "delivered") {
     next({
       status: 400,
       message: "A delivered order cannot be changed.",
     });
   }
+
   return next();
 }
 
 // Validation Function for Delete request:
 function orderStatusIsPending(req, res, next) {
   const order = res.locals.order;
+
   if (order.status !== "pending") {
     next({
       status: 400,
       message: "An order cannot be deleted unless it is pending.",
     });
   }
+
   return next();
 }
 
+// Route Handlers:
 function destroy(req, res) {
   const { orderId } = req.params;
   const orderIndex = orders.findIndex((order) => order.id === orderId);
