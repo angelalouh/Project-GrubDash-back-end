@@ -10,7 +10,7 @@ const nextId = require("../utils/nextId");
 function bodyHasDeliverToProperty(req, res, next) {
   const { data = {} } = req.body;
 
-  if (!data.deliverTo || !data.deliverTo.length) {
+  if (!data.deliverTo) {
     next({
       status: 400,
       message: "Order must include a deliverTo property.",
@@ -24,7 +24,7 @@ function bodyHasDeliverToProperty(req, res, next) {
 function bodyHasMobileNumProperty(req, res, next) {
   const reqBody = res.locals.reqBody;
 
-  if (!reqBody.mobileNumber || !reqBody.mobileNumber.length) {
+  if (!reqBody.mobileNumber) {
     next({
       status: 400,
       message: "Order must include a mobileNumber property.",
@@ -126,7 +126,7 @@ function bodyIdMatchesRouteId(req, res, next) {
 function bodyHasStatusProperty(req, res, next) {
   const reqBody = res.locals.reqBody;
 
-  if (!reqBody.status || !reqBody.status.length || reqBody.status === "invalid") {
+  if (!reqBody.status || reqBody.status === "invalid") {
     next({
       status: 400,
       message:
