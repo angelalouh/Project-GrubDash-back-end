@@ -10,7 +10,7 @@ const nextId = require("../utils/nextId");
 function bodyHasNameProperty(req, res, next) {
   const { data = {} } = req.body;
 
-  if (!data.name || !data.name.length) {
+  if (!data.name) {
     next({
       status: 400,
       message: "Dish must include a name.",
@@ -24,7 +24,7 @@ function bodyHasNameProperty(req, res, next) {
 function bodyHasDescriptionProperty(req, res, next) {
   const reqBody = res.locals.reqBody;
 
-  if (!reqBody.description || !reqBody.description.length) {
+  if (!reqBody.description) {
     next({
       status: 400,
       message: "Dish must include a description.",
@@ -51,7 +51,7 @@ function bodyHasPriceProperty(req, res, next) {
 function bodyHasImageUrlProperty(req, res, next) {
   const reqBody = res.locals.reqBody;
 
-  if (!reqBody["image_url"] || !reqBody["image_url"].length) {
+  if (!reqBody["image_url"]) {
     next({
       status: 400,
       message: "Dish must include a image_url",
