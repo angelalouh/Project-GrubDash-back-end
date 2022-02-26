@@ -8,6 +8,10 @@ Of note, the front-end application was provided for this assignment.
 - [App Demo](https://grub-dash-front-end-xi.vercel.app/)
 - [App Documentation](https://github.com/angelalouh/project-grubdash-app)
 
+## Screenshot
+### Home Page:
+![home](/screenshots/home.jpg)
+
 ## Technology
 - Built with Node.js and Express server framework
 
